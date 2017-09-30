@@ -1,22 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using AForge.Video.DirectShow;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
-using PixelFormat = System.Drawing.Imaging.PixelFormat;
 
 namespace EchoMoodyWpf.ViewModels
 {
@@ -62,7 +53,7 @@ namespace EchoMoodyWpf.ViewModels
 
         public EchoMoodyViewModel()
         {
-            TriggerButtonClick = new RelayCommand(CheckFace);
+            TriggerButtonClick = new RelayCommand(TakePicture);
 
             //Initialize Camera
             FilterInfoCollection filter = new FilterInfoCollection(FilterCategory.VideoInputDevice);
@@ -71,7 +62,7 @@ namespace EchoMoodyWpf.ViewModels
             device.Start();
         }
 
-        public async void CheckFace()
+        public void TakePicture()
         {
             if (_lastFrame == null)
                 return;
@@ -81,7 +72,7 @@ namespace EchoMoodyWpf.ViewModels
 
             Random rand = new Random();
             string extraNum = rand.Next(100000).ToString();
-            string imageName = "yeah" + extraNum + ".jpg";
+            string imageName = @"C:\Users\Thomas\OneDrive\Öffentlich\moody\face.jpg";
 
 
             facebtm.Save(imageName, ImageFormat.Jpeg);
