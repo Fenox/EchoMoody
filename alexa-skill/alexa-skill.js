@@ -50,11 +50,13 @@ var optionsAzure = {
   }
 };
 
-
 var speechOutput = '';
 var handlers = {
     'LaunchRequest': function () {
-          this.emit(':ask', welcomeOutput + " How can I help you?");
+        var self = this;
+        takePicture(function() {
+            self.emit(':ask', welcomeOutput + " How can I help you?");
+        });
     },
 	'AMAZON.HelpIntent': function () {
         this.emit(':ask', "I can analyze your mood, play music and adjust your lights");
@@ -75,40 +77,20 @@ var handlers = {
         .speak( "Lets play some music");
     },
     'SessionEndedRequest': function () {
-        speechOutput = 'asd';
-        //this.emit(':saveState', true);//uncomment to save attributes to db on session end
+        speechOutput = 'Session ended';
         this.emit(':tell', speechOutput);
     },
     "TakePicture": function () {
-        /*var params = {
-            "thingName" : config.IOT_THING_NAME,
-            "payload" : JSON.stringify(
-                { "topic": "sdk/test/Python"
-                }
-            )
-        };*/
-        var iotData = new awsIot.IotData({endpoint: config.IOT_BROKER_ENDPOINT});
-
-        var params = {
-                topic: 'sdk/test/Python',
-                payload: 'blah',
-                qos: 0,
-                thingName : config.IOT_THING_NAME
-                };
-        iotData.publish(params, function(err, data){
-        if(err){
-            console.log(err);
-        }
-        /*else{
-            console.log("success?");
-            //context.succeed(event);
-        }*/
-    });
-        var say = "took picture";
+        var self = this;
+        takePicture(function() {
+            self.response.speak("I Took a picture").listen("What shall I do next?");
+            self.emit(':responseReady');
+        });
+        /*var say = "took picture";
         updateShadow(params, status => {
             this.response.speak(say).listen(say);
             this.emit(':responseReady');
-        });
+        });*/
     },
 	"FaceAnalyzer": function () {
 	    var self = this;
@@ -118,7 +100,7 @@ var handlers = {
             var obj = JSON.parse(body); 
             var maxMood = JSON.parse(getMoodIndex(obj[0].scores));
             console.log(maxMood);
-            self.emit(":tell", "you were" + Math.floor(maxMood.value * 100) + "%" + maxMood.mood.toString());
+            self.emit(":ask", "you were" + Math.floor(maxMood.value * 100) + "%" + maxMood.mood.toString());
         });    
     },	
     "AdjustLights": function () {
@@ -154,36 +136,45 @@ var handlers = {
         this.emit(':ask', speechOutput, speechOutput);
     }
 };
-function updateShadow(params, callback) {
-    // update AWS IOT thing shadow
-    awsIot.config.region = config.IOT_BROKER_REGION;
-
-    
-
+function takePicture(_callback) {
     var iotData = new awsIot.IotData({endpoint: config.IOT_BROKER_ENDPOINT});
-
-    iotData.updateThingShadow(params, function(err, data)  {
-        if (err){
+    var self = this;
+    var params = {
+            topic: 'sdk/test/Python',
+            payload: 'blah',
+            qos: 0
+            };
+    iotData.publish(params, function(err, data){
+        if(err){
             console.log(err);
-
-            callback("not ok");
         }
         else {
-            console.log("updated thing shadow " + config.IOT_THING_NAME + ' to state ' + paramsUpdate.payload);
-            callback("ok");
+            var imageObj = {
+                smallImageUrl: 'http://juli.pbum.de/image.jpg',
+                largeImageUrl: 'http://juli.pbum.de/image.jpg'
+            };
+            /*self.response
+                .speak("asd")
+                .listen("asd")
+                //.cardRenderer("test", "test", cardImage)
+            self.emit(":responseReady")*/
+            
+            console.log("success?");
+            _callback();
+            //this.emit(':tell', "sucess");
+            //context.succeed(event);
         }
-
     });
 
 }
 
 function analyzePicture(_callback){
     //server url
-    //var post_data = '{"url": "http://juli.pbum.de/image.jpg"}'
+    var post_data = '{"url": "http://juli.pbum.de/image.jpg"}'
     //happy
     //var post_data = '{"url": "http://images.huffingtonpost.com/2016-05-27-1464381878-6932997-11HabitsofSupremelyHappyPeopleHP.jpg"}'
     //sad
-    var post_data = '{"url": "https://www.askideas.com/wp-content/uploads/2016/11/Funny-Sad-Baby-Face-Photo.jpg"}'
+    //var post_data = '{"url": "https://www.askideas.com/wp-content/uploads/2016/11/Funny-Sad-Baby-Face-Photo.jpg"}'
     //anger
     //var post_data = '{"url": "http://i2.cdn.cnn.com/cnnnext/dam/assets/161107120239-01-trump-parry-super-169.jpg"}'
     	//any intent slot variables are listed here for convenience
